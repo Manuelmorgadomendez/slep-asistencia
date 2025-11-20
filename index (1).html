@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Asistencia - SLEP Del Pino</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: #1a1a1a;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1rem;
+            font-weight: 400;
+        }
+
+        .date-display {
+            background: #f3f4f6;
+            padding: 0.75rem 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-display i {
+            color: #6b7280;
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+
+        .course-card:hover {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .course-info h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.25rem;
+        }
+
+        .course-info p {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .course-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-action {
+            background: #f3f4f6;
+            border: none;
+            padding: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #6b7280;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-action:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .input-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .input-field {
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .input-field:disabled {
+            background: #f9fafb;
+            color: #6b7280;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 0.75rem;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-connecting {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #f59e0b;
+        }
+
+        .status-connected {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .config-section {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .config-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-message {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid;
+        }
+
+        .status-message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border-color: #10b981;
+        }
+
+        .status-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #ef4444;
+        }
+
+        .status-message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-color: #3b82f6;
+        }
+
+        .status-message.warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-color: #f59e0b;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                padding: 1.5rem;
+            }
+
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <i data-lucide="graduation-cap"></i>
+                Registro de Asistencia - SLEP Del Pino
+            </h1>
+            <p>Sistema de control de asistencia estudiantil con sincronización a Google Sheets</p>
+            
+            <div class="date-display">
+                <i data-lucide="calendar"></i>
+                <span id="date-display">Cargando fecha...</span>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="status-messages"></div>
+
+        <!-- Connection Status -->
+        <div class="controls">
+            <div class="connection-status" id="connection-status">
+                <i data-lucide="wifi-off"></i>
+                <span id="connection-text">Configuración requerida</span>
+            </div>
+
+            <!-- Configuration Section -->
+            <div class="config-section">
+                <h3>
+                    <i data-lucide="settings"></i>
+                    Configuración de Google Sheets
+                </h3>
+                
+                <div class="config-grid">
+                    <div>
+                        <label for="api-key-input" style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">
+                            API Key de Google:
+                        </label>
+                        <input type="password" 
+                               id="api-key-input" 
+                               class="input-field" 
+                               placeholder="Ingresa tu API Key de Google Sheets"
+                               style="width: 100%;">
+                    </div>
+                    <div style="align-self: end;">
+                        <button id="test-api-btn" class="btn btn-secondary">
+                            <i data-lucide="check-circle"></i>
+                            Probar API
+                        </button>
+                    </div>
+                </div>
+
+                <div class="config-grid">
+                    <div>
+                        <label for="sheet-id-input" style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #374151;">
+                            ID de la Hoja de Google:
+                        </label>
+                        <input type="text" 
+                               id="sheet-id-input" 
+                               class="input-field" 
+                               placeholder="Ingresa el ID de tu hoja de Google Sheets"
+                               style="width: 100%;">
+                    </div>
+                    <div style="align-self: end;">
+                        <button id="save-config-btn" class="btn btn-primary">
+                            <i data-lucide="save"></i>
+                            Guardar Configuración
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1rem; padding: 1rem; background: white; border-radius: 8px; border: 1px solid #d1d5db;">
+                    <h4 style="font-size: 0.875rem; font-weight: 600; color: #111827; margin-bottom: 0.5rem;">
+                        📋 ¿Cómo obtener estos datos?
+                    </h4>
+                    <ol style="font-size: 0.75rem; color: #6b7280; padding-left: 1.5rem;">
+                        <li>Ve a <a href="https://console.cloud.google.com/" target="_blank" style="color: #3b82f6;">Google Cloud Console</a></li>
+                        <li>Crea un proyecto y habilita la API de Google Sheets</li>
+                        <li>Crea una API Key en "Credenciales"</li>
+                        <li>Crea una hoja en Google Sheets y copia su ID desde la URL</li>
+                        <li>Consulta la guía completa para detalles</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- Courses Grid -->
+        <div class="courses-grid" id="courses-grid">
+            <!-- Courses will be generated dynamically -->
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button id="save-btn" class="btn btn-primary" disabled>
+                    <i data-lucide="cloud-upload"></i>
+                    Guardar en Google Sheets
+                </button>
+                
+                <button id="export-btn" class="btn btn-secondary">
+                    <i data-lucide="download"></i>
+                    Exportar a Excel
+                </button>
+                
+                <button id="refresh-btn" class="btn btn-secondary" disabled>
+                    <i data-lucide="refresh-cw"></i>
+                    Actualizar desde Sheets
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2024 Servicio Local de Educación Pública Del Pino | Sistema de Registro de Asistencia</p>
+        </div>
+    </div>
+
+    <script>
+        // ===== GLOBAL VARIABLES =====
+        let googleAPIKey = '';
+        let googleSheetId = '';
+        let gapi = null;
+        let isConnected = false;
+
+        const courses = [
+            { id: '1', name: '1° Básico', levels: ['A', 'B'] },
+            { id: '2', name: '2° Básico', levels: ['A', 'B'] },
+            { id: '3', name: '3° Básico', levels: ['A', 'B'] },
+            { id: '4', name: '4° Básico', levels: ['A', 'B'] },
+            { id: '5', name: '5° Básico', levels: ['A', 'B'] },
+            { id: '6', name: '6° Básico', levels: ['A', 'B'] },
+            { id: '7', name: '7° Básico', levels: ['A', 'B'] },
+            { id: '8', name: '8° Básico', levels: ['A', 'B'] },
+            { id: '9', name: '1° Medio', levels: ['A', 'B'] },
+            { id: '10', name: '2° Medio', levels: ['A', 'B'] },
+            { id: '11', name: '3° Medio', levels: ['A', 'B'] },
+            { id: '12', name: '4° Medio', levels: ['A', 'B'] }
+        ];
+
+        const currentDate = new Date();
+
+        // ===== UTILITY FUNCTIONS =====
+        function showStatusMessage(message, type = 'info') {
+            const container = document.getElementById('status-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `status-message ${type}`;
+            messageDiv.textContent = message;
+            
+            container.appendChild(messageDiv);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.parentNode.removeChild(messageDiv);
+                }
+            }, 5000);
+        }
+
+        function updateConnectionStatus(status, text) {
+            const statusDiv = document.getElementById('connection-status');
+            const textSpan = document.getElementById('connection-text');
+            
+            // Remove all status classes
+            statusDiv.className = 'connection-status';
+            statusDiv.classList.add(`status-${status}`);
+            
+            // Update icon based on status
+            let iconName = 'wifi-off';
+            if (status === 'connected') iconName = 'wifi';
+            else if (status === 'connecting') iconName = 'loader';
+            else if (status === 'error') iconName = 'wifi-off';
+            
+            statusDiv.innerHTML = `
+                <i data-lucide="${iconName}"></i>
+                <span>${text}</span>
+            `;
+            
+            // Recreate icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
+
+        function updateDateDisplay() {
+            const dateDisplay = document.getElementById('date-display');
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            };
+            dateDisplay.textContent = currentDate.toLocaleDateString('es-ES', options);
+        }
+
+        function generateCourses() {
+            const grid = document.getElementById('courses-grid');
+            grid.innerHTML = '';
+
+            courses.forEach(course => {
+                course.levels.forEach((level, levelIndex) => {
+                    const courseId = `${course.id}_${level}`;
+                    const courseCard = createCourseCard(course, level, courseId);
+                    grid.appendChild(courseCard);
+                });
+            });
+        }
+
+        function createCourseCard(course, level, courseId) {
+            const card = document.createElement('div');
+            card.className = 'course-card';
+            card.id = `course-${courseId}`;
+
+            card.innerHTML = `
+                <div class="course-header">
+                    <div class="course-info">
+                        <h3>${course.name} - Sección ${level}</h3>
+                        <p>Curso: ${course.id} | Sección: ${level}</p>
+                    </div>
+                    <div class="course-actions">
+                        <button class="btn-action" onclick="clearInputs('${courseId}')" title="Limpiar datos">
+                            <i data-lucide="rotate-ccw"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="present-${courseId}">Alumnos Presentes:</label>
+                        <input type="number" 
+                               id="present-${courseId}" 
+                               class="input-field present-input" 
+                               placeholder="0" 
+                               min="0" 
+                               onchange="updateStats('${courseId}')">
+                    </div>
+                    <div class="input-group">
+                        <label for="absent-${courseId}">Alumnos Ausentes:</label>
+                        <input type="number" 
+                               id="absent-${courseId}" 
+                               class="input-field absent-input" 
+                               placeholder="0" 
+                               min="0" 
+                               onchange="updateStats('${courseId}')">
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-${courseId}">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="percentage-${courseId}">0%</div>
+                        <div class="stat-label">Asistencia</div>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function clearInputs(courseId) {
+            const presentInput = document.getElementById(`present-${courseId}`);
+            const absentInput = document.getElementById(`absent-${courseId}`);
+            
+            if (presentInput) presentInput.value = '';
+            if (absentInput) absentInput.value = '';
+            updateStats(courseId);
+        }
+
+        function updateStats(courseId) {
+            const presentInput = document.getElementById(`present-${courseId}`);
+            const absentInput = document.getElementById(`absent-${courseId}`);
+            const totalSpan = document.getElementById(`total-${courseId}`);
+            const percentageSpan = document.getElementById(`percentage-${courseId}`);
+
+            const present = parseInt(presentInput?.value) || 0;
+            const absent = parseInt(absentInput?.value) || 0;
+            const total = present + absent;
+            const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+
+            if (totalSpan) totalSpan.textContent = total;
+            if (percentageSpan) {
+                percentageSpan.textContent = `${percentage}%`;
+
+                // Color coding for percentage
+                if (percentage >= 90) {
+                    percentageSpan.style.color = '#10b981';
+                } else if (percentage >= 75) {
+                    percentageSpan.style.color = '#f59e0b';
+                } else {
+                    percentageSpan.style.color = '#ef4444';
+                }
+            }
+        }
+
+        function enableControls() {
+            const saveBtn = document.getElementById('save-btn');
+            const refreshBtn = document.getElementById('refresh-btn');
+            
+            if (saveBtn) saveBtn.disabled = !isConnected;
+            if (refreshBtn) refreshBtn.disabled = !isConnected;
+        }
+
+        // ===== GOOGLE SHEETS FUNCTIONS =====
+        async function testAPIConnection() {
+            const apiKeyInput = document.getElementById('api-key-input');
+            const apiKey = apiKeyInput?.value.trim();
+            
+            if (!apiKey) {
+                showStatusMessage('⚠️ Por favor ingresa una API Key', 'warning');
+                return;
+            }
+
+            updateConnectionStatus('connecting', 'Probando conexión con API...');
+
+            try {
+                // Test simple API call to verify key
+                const testUrl = `https://sheets.googleapis.com/v4/spreadsheets?key=${apiKey}`;
+                const response = await fetch(testUrl);
+                
+                if (response.ok || response.status === 400) {
+                    // 400 is OK for this test (no spreadsheet ID)
+                    updateConnectionStatus('connected', '✅ API Key válida');
+                    showStatusMessage('✅ API Key funcionando correctamente', 'success');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                updateConnectionStatus('error', '❌ API Key inválida');
+                showStatusMessage(`❌ Error con API Key: ${error.message || 'Error desconocido'}`, 'error');
+            }
+        }
+
+        async function saveConfiguration() {
+            const apiKeyInput = document.getElementById('api-key-input');
+            const sheetIdInput = document.getElementById('sheet-id-input');
+            
+            const apiKey = apiKeyInput?.value.trim();
+            const sheetId = sheetIdInput?.value.trim();
+
+            if (!apiKey || !sheetId) {
+                showStatusMessage('⚠️ Completa ambos campos (API Key y Sheet ID)', 'warning');
+                return;
+            }
+
+            googleAPIKey = apiKey;
+            googleSheetId = sheetId;
+
+            // Save to localStorage
+            try {
+                localStorage.setItem('slep-config', JSON.stringify({
+                    apiKey: apiKey,
+                    sheetId: sheetId
+                }));
+            } catch (e) {
+                console.warn('Could not save to localStorage:', e);
+            }
+
+            updateConnectionStatus('connecting', 'Guardando configuración...');
+            
+            try {
+                // Test connection with both API key and sheet ID
+                await testFullConnection();
+                showStatusMessage('✅ Configuración guardada exitosamente', 'success');
+            } catch (error) {
+                updateConnectionStatus('error', '❌ Error de configuración');
+                showStatusMessage(`❌ Error: ${error.message || 'Error desconocido'}`, 'error');
+            }
+        }
+
+        async function testFullConnection() {
+            try {
+                // Initialize Google API client
+                gapi = window.gapi;
+                
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', async () => {
+                        try {
+                            await gapi.client.init({
+                                apiKey: googleAPIKey,
+                                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
+                            });
+                            resolve();
+                        } catch (error) {
+                            reject(error);
+                        }
+                    });
+                });
+
+                // Test sheet access
+                const response = await gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: googleSheetId,
+                    range: 'A1:A1' // Just check if we can access the sheet
+                });
+
+                isConnected = true;
+                updateConnectionStatus('connected', '✅ Conectado a Google Sheets');
+                enableControls();
+                showStatusMessage('✅ Conexión exitosa con Google Sheets', 'success');
+                
+            } catch (error) {
+                isConnected = false;
+                throw new Error(`Error de conexión: ${error.message || 'No se pudo conectar'}`);
+            }
+        }
+
+        // FUNCIÓN CORREGIDA PARA GUARDAR DATOS
+        async function saveToGoogleSheets() {
+            if (!isConnected) {
+                showStatusMessage('⚠️ Configura la conexión primero', 'warning');
+                return;
+            }
+
+            try {
+                showStatusMessage('🔄 Preparando datos...', 'info');
+                
+                const attendanceData = [];
+                let validEntries = 0;
+                
+                // Collect all data with better validation
+                courses.forEach(course => {
+                    course.levels.forEach(level => {
+                        const courseId = `${course.id}_${level}`;
+                        const presentInput = document.getElementById(`present-${courseId}`);
+                        const absentInput = document.getElementById(`absent-${courseId}`);
+
+                        if (presentInput && absentInput) {
+                            const present = parseInt(presentInput.value) || 0;
+                            const absent = parseInt(absentInput.value) || 0;
+                            const total = present + absent;
+
+                            // Only add if there's data to save
+                            if (total > 0) {
+                                const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+                                
+                                attendanceData.push([
+                                    currentDate.toLocaleDateString('es-ES'),
+                                    course.name,
+                                    level,
+                                    present,
+                                    absent,
+                                    total,
+                                    percentage,
+                                    new Date().toLocaleTimeString('es-ES')
+                                ]);
+                                validEntries++;
+                            }
+                        }
+                    });
+                });
+
+                if (attendanceData.length === 0) {
+                    showStatusMessage('⚠️ No hay datos para guardar. Ingresa al menos un número en los campos de asistencia.', 'warning');
+                    return;
+                }
+
+                showStatusMessage(`📝 Guardando ${validEntries} registros...`, 'info');
+
+                // Save to Google Sheets with better error handling
+                try {
+                    const response = await gapi.client.sheets.spreadsheets.values.append({
+                        spreadsheetId: googleSheetId,
+                        range: 'A:H',
+                        valueInputOption: 'RAW',
+                        resource: {
+                            values: attendanceData
+                        }
+                    });
+
+                    showStatusMessage(`✅ Datos guardados exitosamente (${validEntries} registros)`, 'success');
+                    
+                } catch (apiError) {
+                    // Handle API-specific errors
+                    let errorMessage = 'Error desconocido al guardar';
+                    
+                    if (apiError.result && apiError.result.error) {
+                        const error = apiError.result.error;
+                        if (error.status === 'PERMISSION_DENIED') {
+                            errorMessage = 'Sin permisos para escribir en la hoja. Verifica que esté compartida contigo.';
+                        } else if (error.status === 'INVALID_ARGUMENT') {
+                            errorMessage = 'ID de hoja inválido. Verifica que el Sheet ID sea correcto.';
+                        } else if (error.message) {
+                            errorMessage = error.message;
+                        }
+                    } else if (apiError.message) {
+                        errorMessage = apiError.message;
+                    }
+                    
+                    throw new Error(errorMessage);
+                }
+                
+            } catch (error) {
+                console.error('Save error:', error);
+                
+                // Get a readable error message
+                let errorMsg = 'Error desconocido';
+                
+                if (error && typeof error === 'string') {
+                    errorMsg = error;
+                } else if (error && error.message) {
+                    errorMsg = error.message;
+                } else if (error && error.result && error.result.error) {
+                    errorMsg = error.result.error.message || 'Error de API';
+                }
+                
+                showStatusMessage(`❌ Error al guardar: ${errorMsg}`, 'error');
+            }
+        }
+
+        function exportToExcel() {
+            try {
+                const workbook = XLSX.utils.book_new();
+                const data = [];
+
+                // Collect all data
+                courses.forEach(course => {
+                    course.levels.forEach(level => {
+                        const courseId = `${course.id}_${level}`;
+                        const presentInput = document.getElementById(`present-${courseId}`);
+                        const absentInput = document.getElementById(`absent-${courseId}`);
+
+                        const present = parseInt(presentInput?.value) || 0;
+                        const absent = parseInt(absentInput?.value) || 0;
+                        const total = present + absent;
+                        const percentage = total > 0 ? Math.round((present / total) * 100) : 0;
+
+                        data.push([
+                            currentDate.toLocaleDateString('es-ES'),
+                            course.name,
+                            level,
+                            present,
+                            absent,
+                            total,
+                            percentage,
+                            new Date().toLocaleTimeString('es-ES')
+                        ]);
+                    });
+                });
+
+                const worksheet = XLSX.utils.aoa_to_sheet([
+                    ['Fecha', 'Curso', 'Sección', 'Presentes', 'Ausentes', 'Total', 'Porcentaje', 'Hora'],
+                    ...data
+                ]);
+
+                // Set column widths
+                worksheet['!cols'] = [
+                    { wch: 12 }, { wch: 15 }, { wch: 10 }, { wch: 10 },
+                    { wch: 10 }, { wch: 8 }, { wch: 12 }, { wch: 12 }
+                ];
+
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Asistencia');
+
+                // Generate filename with current date
+                const filename = `asistencia_slep_${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getDate().toString().padStart(2, '0')}.xlsx`;
+
+                XLSX.writeFile(workbook, filename);
+                showStatusMessage('✅ Archivo Excel exportado exitosamente', 'success');
+
+            } catch (error) {
+                showStatusMessage(`❌ Error al exportar: ${error.message || 'Error desconocido'}`, 'error');
+            }
+        }
+
+        function loadConfiguration() {
+            try {
+                const saved = localStorage.getItem('slep-config');
+                if (saved) {
+                    const config = JSON.parse(saved);
+                    googleAPIKey = config.apiKey || '';
+                    googleSheetId = config.sheetId || '';
+                    
+                    const apiKeyInput = document.getElementById('api-key-input');
+                    const sheetIdInput = document.getElementById('sheet-id-input');
+                    
+                    if (apiKeyInput) apiKeyInput.value = googleAPIKey;
+                    if (sheetIdInput) sheetIdInput.value = googleSheetId;
+                    
+                    if (googleAPIKey && googleSheetId) {
+                        showStatusMessage('📋 Configuración cargada', 'info');
+                    }
+                }
+            } catch (e) {
+                console.error('Error loading configuration:', e);
+            }
+        }
+
+        // ===== EVENT LISTENERS =====
+        function setupEventListeners() {
+            const testApiBtn = document.getElementById('test-api-btn');
+            const saveConfigBtn = document.getElementById('save-config-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const exportBtn = document.getElementById('export-btn');
+
+            if (testApiBtn) testApiBtn.addEventListener('click', testAPIConnection);
+            if (saveConfigBtn) saveConfigBtn.addEventListener('click', saveConfiguration);
+            if (saveBtn) saveBtn.addEventListener('click', saveToGoogleSheets);
+            if (exportBtn) exportBtn.addEventListener('click', exportToExcel);
+
+            // Prevent form submission on Enter
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target.tagName === 'INPUT') {
+                    e.preventDefault();
+                }
+            });
+
+            // Auto-save configuration when typing in fields
+            const apiKeyInput = document.getElementById('api-key-input');
+            const sheetIdInput = document.getElementById('sheet-id-input');
+
+            if (apiKeyInput) {
+                apiKeyInput.addEventListener('input', (e) => {
+                    googleAPIKey = e.target.value.trim();
+                });
+            }
+
+            if (sheetIdInput) {
+                sheetIdInput.addEventListener('input', (e) => {
+                    googleSheetId = e.target.value.trim();
+                });
+            }
+        }
+
+        // ===== INITIALIZATION =====
+        function init() {
+            updateDateDisplay();
+            generateCourses();
+            loadConfiguration();
+            setupEventListeners();
+
+            showStatusMessage('📊 Sistema de Registro de Asistencia cargado', 'success');
+            
+            if (!googleAPIKey || !googleSheetId) {
+                showStatusMessage('⚙️ Configura tu API Key y Sheet ID para comenzar', 'info');
+                updateConnectionStatus('error', 'Configuración requerida');
+            }
+        }
+
+        // ===== START APPLICATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            init();
+        });
+    </script>
+</body>
+</html>
