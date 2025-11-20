@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Asistencia - SLEP Del Pino</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Google Sheets API -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    
+    <style>
+        /* ===== CSS RESET & BASE STYLES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ===== CSS CUSTOM PROPERTIES ===== */
+        :root {
+            /* Color System - 60-30-10 Rule */
+            /* Primary Colors (10%) */
+            --primary-50: #EBF5FF;
+            --primary-500: #007BFF;
+            --primary-700: #0056b3;
+            
+            /* Neutral Colors (90%) */
+            --neutral-50: #F8F9FA;
+            --neutral-100: #FFFFFF;
+            --neutral-500: #ADB5BD;
+            --neutral-700: #495057;
+            --neutral-900: #212529;
+            
+            /* Semantic Colors */
+            --success: #28a745;
+            --warning: #ffc107;
+            --error: #dc3545;
+            --info: #17a2b8;
+            
+            /* Typography */
+            --font-family: 'Inter', sans-serif;
+            
+            /* Spacing System (4px grid) */
+            --space-xs: 8px;
+            --space-sm: 16px;
+            --space-md: 24px;
+            --space-lg: 32px;
+            --space-xl: 48px;
+            --space-xxl: 64px;
+            
+            /* Border Radius */
+            --border-radius: 12px;
+            
+            /* Shadows */
+            --shadow-sm: 0 4px 12px rgba(33, 37, 41, 0.08);
+            --shadow-lg: 0 8px 24px rgba(33, 37, 41, 0.12);
+        }
+
+        /* ===== BASE STYLES ===== */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--neutral-50);
+            color: var(--neutral-700);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-sm);
+        }
+
+        /* ===== HEADER STYLES ===== */
+        .header {
+            background: linear-gradient(135deg, var(--primary-500) 0%, var(--primary-700) 100%);
+            color: var(--neutral-100);
+            padding: var(--space-lg) 0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .header-content {
+            text-align: center;
+        }
+
+        .header-title {
+            font-size: 36px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: var(--space-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-sm);
+        }
+
+        .header-title i {
+            font-size: 42px;
+        }
+
+        .header-subtitle {
+            font-size: 18px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main {
+            flex: 1;
+            padding: var(--space-xl) 0;
+        }
+
+        /* ===== CONNECTION STATUS ===== */
+        .connection-status {
+            background: var(--neutral-100);
+            border-radius: var(--border-radius);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+
+        .connection-status.connected {
+            border-left: 4px solid var(--success);
+        }
+
+        .connection-status.disconnected {
+            border-left: 4px solid var(--warning);
+        }
+
+        .connection-status.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--warning);
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background-color: var(--success);
+            animation: none;
+        }
+
+        .status-indicator.error {
+            background-color: var(--error);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* ===== ACTION BAR ===== */
+        .action-bar {
+            background: var(--neutral-100);
+            border-radius: var(--border-radius);
+            padding: var(--space-md);
+            margin-bottom: var(--space-xl);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--space-md);
+            flex-wrap: wrap;
+        }
+
+        .action-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--neutral-700);
+            font-weight: 500;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: 12px var(--space-md);
+            border: none;
+            border-radius: var(--border-radius);
+            font-family: var(--font-family);
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease-out;
+            min-height: 48px;
+            white-space: nowrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-500);
+            color: var(--neutral-100);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--primary-700);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background-color: var(--neutral-100);
+            color: var(--primary-500);
+            border: 1px solid var(--primary-500);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: var(--primary-50);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: var(--neutral-100);
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+        /* ===== COURSES GRID ===== */
+        .courses-grid {
+            display: grid;
+            gap: var(--space-md);
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        }
+
+        /* ===== COURSE CARD ===== */
+        .course-card {
+            background: var(--neutral-100);
+            border-radius: var(--border-radius);
+            padding: var(--space-md);
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid transparent;
+        }
+
+        .course-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--primary-50);
+        }
+
+        .course-title {
+            font-size: 20px;
+            font-weight: 600;
+            line-height: 1.4;
+            color: var(--neutral-900);
+            margin-bottom: var(--space-md);
+            text-align: center;
+        }
+
+        .course-section {
+            background: var(--neutral-50);
+            border-radius: 8px;
+            padding: var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        .course-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .section-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--neutral-700);
+            margin-bottom: var(--space-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== INPUT STYLES ===== */
+        .input-group {
+            margin-bottom: var(--space-sm);
+        }
+
+        .input-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--neutral-700);
+            margin-bottom: var(--space-xs);
+        }
+
+        .input-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-field {
+            width: 100%;
+            height: 48px;
+            padding: 0 var(--space-sm);
+            border: 1px solid var(--neutral-500);
+            border-radius: 8px;
+            background-color: var(--neutral-100);
+            font-family: var(--font-family);
+            font-size: 16px;
+            color: var(--neutral-700);
+            transition: all 0.2s ease-in-out;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border: 2px solid var(--primary-500);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+        }
+
+        .input-field::-webkit-outer-spin-button,
+        .input-field::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .input-field[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* ===== STATUS MESSAGES ===== */
+        .status-messages {
+            margin-top: var(--space-xl);
+        }
+
+        .status-message {
+            padding: var(--space-sm) var(--space-md);
+            border-radius: 8px;
+            margin-bottom: var(--space-sm);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: var(--space-xs);
+        }
+
+        .status-message.success {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+
+        .status-message.error {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--error);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+
+        .status-message.warning {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #856404;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+        }
+
+        .status-message.info {
+            background-color: rgba(23, 162, 184, 0.1);
+            color: var(--info);
+            border: 1px solid rgba(23, 162, 184, 0.3);
+        }
+
+        /* ===== FOOTER ===== */
+        .footer {
+            background-color: var(--neutral-900);
+            color: var(--neutral-100);
+            text-align: center;
+            padding: var(--space-md) 0;
+            margin-top: auto;
+        }
+
+        .footer p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* ===== GOOGLE SHEETS CONFIG ===== */
+        .config-section {
+            background: var(--neutral-100);
+            border-radius: var(--border-radius);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .config-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--neutral-900);
+            margin-bottom: var(--space-sm);
+        }
+
+        .config-input {
+            width: 100%;
+            padding: var(--space-sm);
+            border: 1px solid var(--neutral-500);
+            border-radius: 8px;
+            margin-bottom: var(--space-sm);
+        }
+
+        .config-input:focus {
+            border: 2px solid var(--primary-500);
+            outline: none;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+
+        /* Mobile (< 768px) */
+        @media (max-width: 767px) {
+            .container {
+                padding: 0 var(--space-sm);
+            }
+            
+            .header-title {
+                font-size: 28px;
+                flex-direction: column;
+                gap: var(--space-xs);
+            }
+            
+            .header-subtitle {
+                font-size: 16px;
+            }
+            
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+                position: sticky;
+                top: 0;
+                z-index: 100;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .courses-grid {
+                grid-template-columns: 1fr;
+                gap: var(--space-sm);
+                margin-bottom: var(--space-xl);
+            }
+            
+            .course-card {
+                padding: var(--space-sm);
+            }
+        }
+
+        /* Tablet (768px - 1024px) */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .courses-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .action-bar {
+                flex-wrap: nowrap;
+            }
+        }
+
+        /* Desktop (> 1024px) */
+        @media (min-width: 1024px) {
+            .courses-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .action-bar {
+                position: sticky;
+                top: var(--space-md);
+                z-index: 100;
+            }
+        }
+
+        /* Touch devices - disable hover effects */
+        @media (hover: none) and (pointer: coarse) {
+            .course-card:hover {
+                transform: none;
+                box-shadow: var(--shadow-sm);
+            }
+            
+            .btn:active:not(:disabled) {
+                transform: scale(0.98);
+            }
+        }
+
+        /* ===== ACCESSIBILITY ===== */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Focus visible for keyboard navigation */
+        .btn:focus-visible,
+        .input-field:focus-visible,
+        .config-input:focus-visible {
+            outline: 2px solid var(--primary-500);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            :root {
+                --neutral-500: #000000;
+                --neutral-700: #000000;
+                --neutral-900: #000000;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <i data-lucide="school"></i>
+                    Registro de Asistencia
+                </h1>
+                <p class="header-subtitle">Servicio Local de Educación Pública Del Pino</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Connection Status -->
+            <div class="connection-status disconnected" id="connection-status">
+                <div class="status-indicator"></div>
+                <span id="connection-text">Conectando con Google Sheets...</span>
+            </div>
+
+            <!-- Configuration Section -->
+            <div class="config-section" id="config-section">
+                <h3 class="config-title">Configuración de Google Sheets</h3>
+                <input type="text" class="config-input" id="api-key-input" placeholder="AIzaSyDSbDEmwrQAewmRnflKW0uABHr0niu4P6w">
+                <input type="text" class="config-input" id="sheet-id-input" placeholder="128w3dSmjqRxMY4s90eerGLD5bpf_psBD2C0SDlh9pw8">
+                <button class="btn btn-secondary" id="save-config-btn">
+                    <i data-lucide="settings"></i>
+                    Guardar Configuración
+                </button>
+            </div>
+
+            <!-- Action Bar -->
+            <div class="action-bar">
+                <div class="action-info">
+                    <i data-lucide="calendar"></i>
+                    <span id="current-date"></span>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" id="refresh-btn" disabled>
+                        <i data-lucide="refresh-cw"></i>
+                        Actualizar Datos
+                    </button>
+                    <button class="btn btn-secondary" id="export-btn" disabled>
+                        <i data-lucide="download"></i>
+                        Exportar a Excel
+                    </button>
+                    <button class="btn btn-primary" id="save-btn" disabled>
+                        <i data-lucide="cloud-upload"></i>
+                        Guardar en Google Sheets
+                    </button>
+                </div>
+            </div>
+
+            <!-- Courses Grid -->
+            <div class="courses-grid" id="courses-grid">
+                <!-- Courses will be generated by JavaScript -->
+            </div>
+
+            <!-- Status Messages -->
+            <div class="status-messages" id="status-messages">
+                <!-- Status messages will appear here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Servicio Local de Educación Pública Del Pino - Sistema de Registro de Asistencia</p>
+        </div>
+    </footer>
+
+    <script>
+        // ===== APPLICATION STATE =====
+        let attendanceData = {};
+        let currentDate = new Date();
+        let isConnectedToSheets = false;
+        let googleAPIKey = '';
+        let googleSheetId = '';
+        let gapi = null;
+
+        // ===== COURSE CONFIGURATION =====
+        const courses = [
+            { id: '1-basico', name: '1° Básico', sections: ['A', 'B'] },
+            { id: '2-basico', name: '2° Básico', sections: ['A', 'B'] },
+            { id: '3-basico', name: '3° Básico', sections: ['A', 'B'] },
+            { id: '4-basico', name: '4° Básico', sections: ['A', 'B'] },
+            { id: '5-basico', name: '5° Básico', sections: ['A', 'B'] },
+            { id: '6-basico', name: '6° Básico', sections: ['A', 'B'] },
+            { id: '7-basico', name: '7° Básico', sections: ['A', 'B'] },
+            { id: '8-basico', name: '8° Básico', sections: ['A', 'B'] },
+            { id: '1-medio', name: '1° Medio', sections: ['A', 'B'] },
+            { id: '2-medio', name: '2° Medio', sections: ['A', 'B'] },
+            { id: '3-medio', name: '3° Medio', sections: ['A', 'B'] },
+            { id: '4-medio', name: '4° Medio', sections: ['A', 'B'] }
+        ];
+
+        // ===== UTILITY FUNCTIONS =====
+        function formatDate(date) {
+            return date.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function showStatusMessage(message, type = 'success') {
+            const statusContainer = document.getElementById('status-messages');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status-message ${type}`;
+            
+            const icon = type === 'success' ? 'check-circle' : 
+                         type === 'error' ? 'x-circle' : 
+                         type === 'warning' ? 'alert-circle' : 'info';
+            
+            statusElement.innerHTML = `
+                <i data-lucide="${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            statusContainer.appendChild(statusElement);
+            
+            // Initialize icons for the new element
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (statusElement.parentNode) {
+                    statusElement.parentNode.removeChild(statusElement);
+                }
+            }, 5000);
+        }
+
+        function updateDateDisplay() {
+            const dateElement = document.getElementById('current-date');
+            dateElement.textContent = formatDate(currentDate);
+        }
+
+        function updateConnectionStatus(status, text) {
+            const statusElement = document.getElementById('connection-status');
+            const statusText = document.getElementById('connection-text');
+            const statusIndicator = document.querySelector('.status-indicator');
+            
+            statusElement.className = `connection-status ${status}`;
+            statusText.textContent = text;
+            
+            if (status === 'connected') {
+                statusIndicator.className = 'status-indicator connected';
+                isConnectedToSheets = true;
+            } else if (status === 'error') {
+                statusIndicator.className = 'status-indicator error';
+                isConnectedToSheets = false;
+            } else {
+                statusIndicator.className = 'status-indicator';
+                isConnectedToSheets = false;
+            }
+        }
+
+        function enableControls() {
+            document.getElementById('save-btn').disabled = !isConnectedToSheets;
+            document.getElementById('export-btn').disabled = !isConnectedToSheets;
+            document.getElementById('refresh-btn').disabled = !isConnectedToSheets;
+        }
+
+        // ===== GOOGLE SHEETS FUNCTIONS =====
+        function loadGoogleAPI() {
+            return new Promise((resolve, reject) => {
+                if (typeof gapi !== 'undefined') {
+                    resolve(gapi);
+                } else {
+                    showStatusMessage('Cargando Google API...', 'info');
+                    // Google API will be loaded via the script tag
+                    const checkAPI = setInterval(() => {
+                        if (typeof gapi !== 'undefined') {
+                            clearInterval(checkAPI);
+                            resolve(gapi);
+                        }
+                    }, 100);
+                    
+                    // Timeout after 10 seconds
+                    setTimeout(() => {
+                        clearInterval(checkAPI);
+                        reject(new Error('Google API not loaded'));
+                    }, 10000);
+                }
+            });
+        }
+
+        async function initGoogleAPI() {
+            try {
+                const gapiInstance = await loadGoogleAPI();
+                
+                return new Promise((resolve, reject) => {
+                    gapiInstance.load('client', async () => {
+                        try {
+                            await gapiInstance.client.init({
+                                apiKey: googleAPIKey,
+                                discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
+                            });
+                            resolve(gapiInstance);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    });
+                });
+            } catch (error) {
+                showStatusMessage('Error al cargar Google API: ' + error.message, 'error');
+                throw error;
+            }
+        }
+
+        async function appendToSheet(data) {
+            try {
+                const gapiInstance = await initGoogleAPI();
+                
+                const values = [
+                    [
+                        currentDate.toLocaleDateString('es-ES'),
+                        data.curso,
+                        data.seccion,
+                        data.asistentes,
+                        data.inasistentes,
+                        data.total,
+                        data.porcentaje,
+                        new Date().toLocaleTimeString('es-ES')
+                    ]
+                ];
+
+                const body = {
+                    values: values
+                };
+
+                const response = await gapiInstance.client.sheets.spreadsheets.values.append({
+                    spreadsheetId: googleSheetId,
+                    range: 'A:H',
+                    valueInputOption: 'RAW',
+                    resource: body
+                });
+
+                return response;
+            } catch (error) {
+                showStatusMessage('Error al guardar en Google Sheets: ' + error.message, 'error');
+                throw error;
+            }
+        }
+
+        async function readFromSheet() {
+            try {
+                const gapiInstance = await initGoogleAPI();
+                
+                const response = await gapiInstance.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: googleSheetId,
+                    range: 'A:H'
+                });
+
+                return response.result.values;
+            } catch (error) {
+                showStatusMessage('Error al leer de Google Sheets: ' + error.message, 'error');
+                throw error;
+            }
+        }
+
+        // ===== LOCAL STORAGE FUNCTIONS =====
+        function loadSavedData() {
+            const saved = localStorage.getItem('slep-del-pino-attendance');
+            if (saved) {
+                try {
+                    attendanceData = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error loading saved data:', e);
+                    attendanceData = {};
+                }
+            }
+        }
+
+        function saveLocalData() {
+            try {
+                localStorage.setItem('slep-del-pino-attendance', JSON.stringify(attendanceData));
+                showStatusMessage('Datos guardados localmente', 'success');
+            } catch (e) {
+                console.error('Error saving local data:', e);
+                showStatusMessage('Error al guardar datos locales', 'error');
+            }
+        }
+
+        // ===== DOM GENERATION =====
+        function createCourseCard(course) {
+            const card = document.createElement('div');
+            card.className = 'course-card';
+            card.id = `course-${course.id}`;
+            
+            let sectionsHTML = '';
+            course.sections.forEach(section => {
+                sectionsHTML += `
+                    <div class="course-section">
+                        <div class="section-label">Sección ${section}</div>
+                        <div class="input-group">
+                            <label class="input-label" for="${course.id}-${section}-asistentes">
+                                Alumnos Asistentes
+                            </label>
+                            <div class="input-container">
+                                <input 
+                                    type="number" 
+                                    id="${course.id}-${section}-asistentes"
+                                    class="input-field"
+                                    min="0"
+                                    placeholder="0"
+                                    data-course="${course.id}"
+                                    data-section="${section}"
+                                    data-type="asistentes"
+                                >
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label" for="${course.id}-${section}-inasistentes">
+                                Alumnos Inasistentes
+                            </label>
+                            <div class="input-container">
+                                <input 
+                                    type="number" 
+                                    id="${course.id}-${section}-inasistentes"
+                                    class="input-field"
+                                    min="0"
+                                    placeholder="0"
+                                    data-course="${course.id}"
+                                    data-section="${section}"
+                                    data-type="inasistentes"
+                                >
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            card.innerHTML = `
+                <h3 class="course-title">${course.name}</h3>
+                ${sectionsHTML}
+            `;
+            
+            return card;
+        }
+
+        function generateCourses() {
+            const grid = document.getElementById('courses-grid');
+            courses.forEach(course => {
+                const card = createCourseCard(course);
+                grid.appendChild(card);
+            });
+        }
+
+        function populateSavedData() {
+            courses.forEach(course => {
+                course.sections.forEach(section => {
+                    const asistentesInput = document.getElementById(`${course.id}-${section}-asistentes`);
+                    const inasistentesInput = document.getElementById(`${course.id}-${section}-inasistentes`);
+                    
+                    const key = `${course.id}-${section}`;
+                    if (attendanceData[key]) {
+                        if (asistentesInput) {
+                            asistentesInput.value = attendanceData[key].asistentes || 0;
+                        }
+                        if (inasistentesInput) {
+                            inasistentesInput.value = attendanceData[key].inasistentes || 0;
+                        }
+                    }
+                });
+            });
+        }
+
+        // ===== DATA MANAGEMENT =====
+        function collectData() {
+            const inputs = document.querySelectorAll('.input-field');
+            const newData = {};
+            
+            inputs.forEach(input => {
+                const course = input.dataset.course;
+                const section = input.dataset.section;
+                const type = input.dataset.type;
+                const value = parseInt(input.value) || 0;
+                
+                if (value < 0) {
+                    showStatusMessage(`Error: El valor para ${course} sección ${section} ${type} no puede ser negativo`, 'error');
+                    input.value = 0;
+                    return;
+                }
+                
+                const key = `${course}-${section}`;
+                if (!newData[key]) {
+                    newData[key] = { asistentes: 0, inasistentes: 0 };
+                }
+                
+                newData[key][type] = value;
+            });
+            
+            return newData;
+        }
+
+        function validateData(data) {
+            let isValid = true;
+            
+            Object.keys(data).forEach(key => {
+                const courseData = data[key];
+                
+                // Check for unrealistic numbers (basic validation)
+                if (courseData.asistentes > 50 || courseData.inasistentes > 50) {
+                    showStatusMessage(`Advertencia: Revisar valores para ${key.replace('-', ' ')} - parecen muy altos`, 'warning');
+                }
+            });
+            
+            const totalAsistentes = Object.values(data).reduce((sum, course) => sum + course.asistentes, 0);
+            const totalInasistentes = Object.values(data).reduce((sum, course) => sum + course.inasistentes, 0);
+            
+            if (totalAsistentes + totalInasistentes === 0) {
+                showStatusMessage('Advertencia: No se han ingresado datos de asistencia', 'warning');
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+
+        // ===== SAVE TO GOOGLE SHEETS =====
+        async function saveToGoogleSheets() {
+            const data = collectData();
+            
+            if (!validateData(data)) {
+                showStatusMessage('Por favor, revise los datos antes de guardar', 'error');
+                return;
+            }
+
+            // Save locally first
+            attendanceData = data;
+            saveLocalData();
+
+            if (!isConnectedToSheets) {
+                showStatusMessage('No conectado a Google Sheets. Guardando localmente.', 'warning');
+                return;
+            }
+
+            showStatusMessage('Guardando en Google Sheets...', 'info');
+
+            try {
+                let savedCount = 0;
+                const totalRecords = Object.keys(data).length;
+
+                for (const [key, courseData] of Object.entries(data)) {
+                    const [courseId, section] = key.split('-');
+                    const course = courses.find(c => c.id === courseId);
+                    
+                    if (course) {
+                        const total = courseData.asistentes + courseData.inasistentes;
+                        const percentage = total > 0 ? 
+                            ((courseData.asistentes / total) * 100).toFixed(1) + '%' : '0%';
+
+                        await appendToSheet({
+                            curso: course.name,
+                            seccion: section,
+                            asistentes: courseData.asistentes,
+                            inasistentes: courseData.inasistentes,
+                            total: total,
+                            porcentaje: percentage
+                        });
+
+                        savedCount++;
+                        
+                        // Update progress
+                        const progress = Math.round((savedCount / totalRecords) * 100);
+                        showStatusMessage(`Guardando... ${progress}%`, 'info');
+                    }
+                }
+
+                showStatusMessage(`✅ Datos guardados exitosamente en Google Sheets (${savedCount} registros)`, 'success');
+                
+            } catch (error) {
+                console.error('Error saving to Google Sheets:', error);
+                showStatusMessage('Error al guardar en Google Sheets. Revisar configuración.', 'error');
+            }
+        }
+
+        // ===== REFRESH DATA FROM SHEETS =====
+        async function refreshFromSheets() {
+            if (!isConnectedToSheets) {
+                showStatusMessage('No conectado a Google Sheets', 'warning');
+                return;
+            }
+
+            showStatusMessage('Actualizando datos desde Google Sheets...', 'info');
+
+            try {
+                const sheetData = await readFromSheet();
+                
+                if (sheetData && sheetData.length > 1) {
+                    // Skip header row
+                    const dataRows = sheetData.slice(1);
+                    
+                    dataRows.forEach(row => {
+                        const [date, curso, seccion, asistentes, inasistentes] = row;
+                        
+                        // Find matching course
+                        const course = courses.find(c => c.name === curso);
+                        if (course) {
+                            const key = `${course.id}-${seccion}`;
+                            if (!attendanceData[key]) {
+                                attendanceData[key] = { asistentes: 0, inasistentes: 0 };
+                            }
+                            attendanceData[key].asistentes = parseInt(asistentes) || 0;
+                            attendanceData[key].inasistentes = parseInt(inasistentes) || 0;
+                        }
+                    });
+
+                    populateSavedData();
+                    saveLocalData();
+                    showStatusMessage('Datos actualizados desde Google Sheets', 'success');
+                } else {
+                    showStatusMessage('No se encontraron datos en la hoja', 'warning');
+                }
+            } catch (error) {
+                console.error('Error refreshing from Google Sheets:', error);
+                showStatusMessage('Error al actualizar desde Google Sheets', 'error');
+            }
+        }
+
+        // ===== EXCEL EXPORT =====
+        function exportToExcel() {
+            const data = collectData();
+            
+            if (!validateData(data)) {
+                showStatusMessage('Por favor, revise los datos antes de exportar', 'error');
+                return;
+            }
+            
+            // Check if XLSX library is available
+            if (typeof XLSX === 'undefined') {
+                showStatusMessage('Error: Biblioteca XLSX no disponible', 'error');
+                return;
+            }
+            
+            // Prepare data for Excel
+            const excelData = [];
+            
+            // Header row
+            excelData.push([
+                'Fecha',
+                'Curso',
+                'Sección',
+                'Alumnos Asistentes',
+                'Alumnos Inasistentes',
+                'Total',
+                'Porcentaje Asistencia'
+            ]);
+            
+            // Data rows
+            courses.forEach(course => {
+                course.sections.forEach(section => {
+                    const key = `${course.id}-${section}`;
+                    if (data[key]) {
+                        const courseData = data[key];
+                        const total = courseData.asistentes + courseData.inasistentes;
+                        const percentage = total > 0 ? 
+                            ((courseData.asistentes / total) * 100).toFixed(1) + '%' : '0%';
+                        
+                        excelData.push([
+                            currentDate.toLocaleDateString('es-ES'),
+                            course.name,
+                            section,
+                            courseData.asistentes,
+                            courseData.inasistentes,
+                            total,
+                            percentage
+                        ]);
+                    }
+                });
+            });
+            
+            // Summary row
+            const totalAsistentes = Object.values(data).reduce((sum, course) => sum + course.asistentes, 0);
+            const totalInasistentes = Object.values(data).reduce((sum, course) => sum + course.inasistentes, 0);
+            const totalGeneral = totalAsistentes + totalInasistentes;
+            const percentageGeneral = totalGeneral > 0 ? 
+                ((totalAsistentes / totalGeneral) * 100).toFixed(1) + '%' : '0%';
+            
+            excelData.push([
+                '',
+                'RESUMEN TOTAL',
+                '',
+                totalAsistentes,
+                totalInasistentes,
+                totalGeneral,
+                percentageGeneral
+            ]);
+            
+            // Create workbook
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(excelData);
+            
+            // Style the header row
+            const range = XLSX.utils.decode_range(ws['!ref']);
+            for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                if (!ws[cellAddress]) continue;
+                ws[cellAddress].s = {
+                    font: { bold: true },
+                    fill: { fgColor: { rgb: "EBF5FF" } },
+                    alignment: { horizontal: "center" }
+                };
+            }
+            
+            // Style the summary row
+            const summaryRow = excelData.length - 1;
+            for (let col = range.s.c; col <= range.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: summaryRow, c: col });
+                if (!ws[cellAddress]) continue;
+                ws[cellAddress].s = {
+                    font: { bold: true },
+                    fill: { fgColor: { rgb: "F8F9FA" } },
+                    alignment: { horizontal: "center" }
+                };
+            }
+            
+            // Set column widths
+            ws['!cols'] = [
+                { width: 12 }, // Fecha
+                { width: 15 }, // Curso
+                { width: 10 }, // Sección
+                { width: 18 }, // Asistentes
+                { width: 18 }, // Inasistentes
+                { width: 10 }, // Total
+                { width: 18 }  // Porcentaje
+            ];
+            
+            XLSX.utils.book_append_sheet(wb, ws, "Registro de Asistencia");
+            
+            // Generate filename
+            const dateStr = currentDate.toISOString().split('T')[0];
+            const filename = `Registro_Asistencia_SLEP_Del_Pino_${dateStr}.xlsx`;
+            
+            // Download file
+            XLSX.writeFile(wb, filename);
+            
+            showStatusMessage(`Archivo Excel descargado: ${filename}`, 'success');
+        }
+
+        // ===== CONFIGURATION FUNCTIONS =====
+        function saveConfiguration() {
+            const apiKey = document.getElementById('api-key-input').value.trim();
+            const sheetId = document.getElementById('sheet-id-input').value.trim();
+            
+            if (!apiKey || !sheetId) {
+                showStatusMessage('Por favor completa ambos campos', 'warning');
+                return;
+            }
+            
+            googleAPIKey = apiKey;
+            googleSheetId = sheetId;
+            
+            localStorage.setItem('slep-config', JSON.stringify({
+                apiKey: apiKey,
+                sheetId: sheetId
+            }));
+            
+            updateConnectionStatus('connecting', 'Verificando conexión con Google Sheets...');
+            
+            // Test connection
+            initGoogleAPI()
+                .then(() => {
+                    updateConnectionStatus('connected', '✅ Conectado a Google Sheets');
+                    enableControls();
+                    showStatusMessage('✅ Conectado exitosamente a Google Sheets', 'success');
+                })
+                .catch(error => {
+                    updateConnectionStatus('error', '❌ Error de conexión con Google Sheets');
+                    enableControls();
+                    showStatusMessage('❌ Error de conexión. Verifica API Key y Sheet ID', 'error');
+                });
+        }
+
+        function loadConfiguration() {
+            const saved = localStorage.getItem('slep-config');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    googleAPIKey = config.apiKey || '';
+                    googleSheetId = config.sheetId || '';
+                    
+                    document.getElementById('api-key-input').value = googleAPIKey;
+                    document.getElementById('sheet-id-input').value = googleSheetId;
+                    
+                    if (googleAPIKey && googleSheetId) {
+                        saveConfiguration();
+                    }
+                } catch (e) {
+                    console.error('Error loading configuration:', e);
+                }
+            }
+        }
+
+        // ===== EVENT LISTENERS =====
+        function setupEventListeners() {
+            // Save configuration
+            document.getElementById('save-config-btn').addEventListener('click', saveConfiguration);
+            
+            // Save button
+            document.getElementById('save-btn').addEventListener('click', saveToGoogleSheets);
+            
+            // Export button
+            document.getElementById('export-btn').addEventListener('click', exportToExcel);
+            
+            // Refresh button
+            document.getElementById('refresh-btn').addEventListener('click', refreshFromSheets);
+            
+            // Real-time data collection on input change
+            document.addEventListener('input', (e) => {
+                if (e.target.classList.contains('input-field')) {
+                    // Prevent negative numbers
+                    if (parseInt(e.target.value) < 0) {
+                        e.target.value = 0;
+                    }
+                }
+            });
+            
+            // Handle Enter key to prevent form submission
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && e.target.classList.contains('input-field')) {
+                    e.preventDefault();
+                    // Move to next input
+                    const inputs = Array.from(document.querySelectorAll('.input-field'));
+                    const currentIndex = inputs.indexOf(e.target);
+                    if (currentIndex < inputs.length - 1) {
+                        inputs[currentIndex + 1].focus();
+                    }
+                }
+            });
+        }
+
+        // ===== INITIALIZATION =====
+        function init() {
+            // Update date
+            updateDateDisplay();
+            
+            // Load saved data and configuration
+            loadSavedData();
+            loadConfiguration();
+            
+            // Generate course cards
+            generateCourses();
+            
+            // Populate with saved data
+            populateSavedData();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Show welcome message
+            showStatusMessage('Sistema de Registro de Asistencia con Google Sheets cargado', 'success');
+            
+            if (!googleAPIKey || !googleSheetId) {
+                showStatusMessage('⚙️ Configura tu API Key y Sheet ID para conectar con Google Sheets', 'info');
+            }
+        }
+
+        // ===== START APPLICATION =====
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            init();
+        });
+    </script>
+</body>
+</html>
